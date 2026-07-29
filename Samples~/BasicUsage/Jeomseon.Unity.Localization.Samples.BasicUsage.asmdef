@@ -1,5 +1,6 @@
 {
   "name": "Jeomseon.Unity.Localization.Samples.BasicUsage",
+  "rootNamespace": "Jeomseon.Samples.Localization",
   "references": [
     "Jeomseon.Unity.Localization",
     "Unity.Localization"
