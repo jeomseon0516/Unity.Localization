@@ -1,6 +1,6 @@
 {
   "name": "com.jeomseon.unity.localization",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "displayName": "Jeomseon Unity Localization",
   "description": "Extensions, attributes, and editor tooling for Unity Localization.",
   "unity": "2022.3",
@@ -22,5 +22,12 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/jeomseon0516/Unity.Localization.git"
-  }
+  },
+  "samples": [
+    {
+      "displayName": "Basic Usage",
+      "description": "패키지 핵심 API를 확인하는 최소 사용 예제입니다.",
+      "path": "Samples~/BasicUsage"
+    }
+  ]
 }

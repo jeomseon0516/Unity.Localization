@@ -1,0 +1,7 @@
+{
+  "name": "Jeomseon.Unity.Localization.Samples.BasicUsage",
+  "references": [
+    "Jeomseon.Unity.Localization",
+    "Unity.Localization"
+  ]
+}
