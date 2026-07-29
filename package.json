@@ -1,8 +1,8 @@
 {
   "name": "com.jeomseon.unity.localization",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "Jeomseon Unity Localization",
-  "description": "Extensions and components for Unity Localization.",
+  "description": "Extensions, attributes, and editor tooling for Unity Localization.",
   "unity": "2022.3",
   "dependencies": {
     "com.jeomseon.unity.core": "0.1.0",
