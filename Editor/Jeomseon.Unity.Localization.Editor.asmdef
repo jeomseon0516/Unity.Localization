@@ -1,0 +1,17 @@
+{
+  "name": "Jeomseon.Unity.Localization.Editor",
+  "rootNamespace": "Jeomseon",
+  "references": [
+    "Jeomseon.Unity.Localization",
+    "Jeomseon.Unity.Core",
+    "Unity.Localization",
+    "Unity.Localization.Editor",
+    "Unity.ResourceManager",
+    "Unity.EditorCoroutines.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": false
+}

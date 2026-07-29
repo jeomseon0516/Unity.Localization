@@ -1,0 +1,11 @@
+{
+  "name": "Jeomseon.Unity.Localization",
+  "rootNamespace": "Jeomseon",
+  "references": [
+    "Jeomseon.Unity.Core",
+    "Unity.Localization",
+    "Unity.ResourceManager"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": false
+}
