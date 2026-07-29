@@ -1,5 +1,9 @@
 # 변경 기록
 
+## [0.2.1] - 2026-07-29
+
+- LocalizedString 변경을 확인하는 `Basic Usage` 샘플을 추가했습니다.
+
 ## [0.2.0] - 2026-07-29
 
 - LocalizedStringAttribute와 전용 PropertyDrawer를 Localization 패키지로 이동했습니다.
