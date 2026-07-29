@@ -1,3 +1,3 @@
 # Jeomseon Unity Localization
 
-Extensions and components for Unity Localization.
+Runtime extensions, `LocalizedStringAttribute`, and editor tooling for Unity Localization.

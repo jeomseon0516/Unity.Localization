@@ -1,5 +1,10 @@
 # 변경 기록
 
+## [0.2.0] - 2026-07-29
+
+- LocalizedStringAttribute와 전용 PropertyDrawer를 Localization 패키지로 이동했습니다.
+- Localization 전용 타입의 namespace를 `Jeomseon.Localization`으로 정리했습니다.
+
 ## [Unreleased]
 
 - TODO(api): Unity Localization의 LocalizeStringEvent로 직접 대체 가능한 컴포넌트와 추가 기능이 필요한 확장 코드를 구분합니다.
