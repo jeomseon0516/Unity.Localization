@@ -3,7 +3,8 @@
   "version": "0.2.2",
   "displayName": "Jeomseon Unity Localization",
   "description": "Extensions, attributes, and editor tooling for Unity Localization.",
-  "unity": "2022.3",
+  "unity": "6000.3",
+  "unityRelease": "15f1",
   "dependencies": {
     "com.jeomseon.unity.core": "0.1.0",
     "com.unity.editorcoroutines": "1.0.0",
