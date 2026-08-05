@@ -8,7 +8,7 @@ using UnityEditor.Localization;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.Localization.Tables;
-using Jeomseon.Extensions;
+using Jeomseon.Collections;
 using Object = UnityEngine.Object;
 
 namespace Jeomseon.Localization.Editor
