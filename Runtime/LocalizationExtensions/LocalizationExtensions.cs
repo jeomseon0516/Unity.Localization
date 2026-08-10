@@ -1,8 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Localization;
-using UnityEngine.Localization.Metadata;
 using UnityEngine.Localization.Settings;
 using UnityEngine.Localization.Tables;
 
@@ -21,40 +18,44 @@ namespace Jeomseon.LocalizationExtensions
             localizedText = localizedString.GetLocalizedString();
             return true;
         }
-        
-        public static string TryGetLocalizedString(this StringTable table, string entryName)
+
+        public static bool TryGetLocalizedString(this StringTable table, string entryName, out string localizedText)
         {
             StringTableEntry entry = table.GetEntry(entryName);
-
-            Comment comment = entry.GetMetadata<Comment>();
-            if (comment is not null)
+            if (entry is null)
             {
-                Debug.Log($"Fount metadata comment for {entryName} - {comment.CommentText}");
+                localizedText = string.Empty;
+                return false;
             }
 
-            return entry.GetLocalizedString();
+            localizedText = entry.GetLocalizedString();
+            return true;
         }
 
-        public static string GetLocalizedStringByLocale(this LocalizedString localizedString, string localeCode)
+        /* Awaitable을 사용하는 이유: LocalizationSettings.InitializationOperation.WaitForCompletion()은
+         * WebGL에서 지원되지 않고 메인 스레드를 블로킹합니다. 초기화가 끝나지 않은 상태에서 호출되면
+         * 비동기로 대기합니다.
+         */
+        public static async Awaitable<string> GetLocalizedStringByLocaleAsync(this LocalizedString localizedString, string localeCode)
         {
             if (localizedString.IsEmpty) return string.Empty;
 
             if (!LocalizationSettings.InitializationOperation.IsDone)
             {
-                LocalizationSettings.InitializationOperation.WaitForCompletion();
+                await LocalizationSettings.InitializationOperation.Task;
             }
 
             Locale locale = LocalizationSettings.AvailableLocales.GetLocale(localeCode);
-            return localizedString.GetLocalizedString(locale);
+            return await localizedString.GetLocalizedStringAsync(locale).Task;
         }
 
         public static string GetEntryKeyName(this LocalizedString localizedString)
         {
             if (!string.IsNullOrEmpty(localizedString.TableReference))
             {
-                LocalizedDatabase<StringTable, StringTableEntry>.TableEntryResult t = 
+                LocalizedDatabase<StringTable, StringTableEntry>.TableEntryResult t =
                     LocalizationSettings.StringDatabase.GetTableEntry(
-                        localizedString.TableReference, 
+                        localizedString.TableReference,
                         localizedString.TableEntryReference);
                 return t.Entry?.Key ?? "";
             }
