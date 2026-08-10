@@ -23,10 +23,10 @@ namespace Jeomseon.Samples.Localization
             Debug.Log($"현지화 문자열: {value}");
         }
 
-        [ContextMenu("Localization 확장 타입 확인")]
-        private void PrintExtensionType()
+        [ContextMenu("Entry Key 확인")]
+        private void PrintEntryKeyName()
         {
-            Debug.Log(typeof(LocalizedStringOption).FullName);
+            Debug.Log($"Entry Key: {_message.GetEntryKeyName()}");
         }
     }
 }

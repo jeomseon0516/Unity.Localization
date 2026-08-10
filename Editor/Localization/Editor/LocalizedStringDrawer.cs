@@ -18,7 +18,8 @@ namespace Jeomseon.Localization.Editor
 
         static LocalizedStringDrawer()
         {
-            // 로케일 변경 이벤트 구독
+            // 정적 생성자는 도메인 로드당 최초 1회만 실행되고 Domain Reload마다 정적 상태가
+            // 초기화되므로, 별도 해제 없이 구독해도 중복 등록되지 않습니다.
             LocalizationEditorSettings.EditorEvents.LocaleAdded += onLocaleChanged;
             LocalizationEditorSettings.EditorEvents.LocaleRemoved += onLocaleChanged;
         }

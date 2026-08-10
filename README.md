@@ -19,3 +19,10 @@ Unity가 제공하는 동등 기능과 비교해 대체 가능한 코드는 소�
 - `LocalizedString` 런타임 확장
 - `Jeomseon.Localization.LocalizedStringAttribute`
 - String Table과 Entry를 편집하는 전용 PropertyDrawer
+
+## 동작 계약
+
+- `GetLocalizedStringByLocaleAsync(string localeCode)`는 `Awaitable<string>`을 반환합니다.
+  Localization 초기화가 끝나지 않았다면 메인 스레드를 블로킹하지 않고 비동기로 대기합니다.
+- `TryGetLocalizedString(this StringTable, string entryName, out string)`은 entry가 없으면
+  예외 대신 `false`와 빈 문자열을 반환합니다.

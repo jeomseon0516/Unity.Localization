@@ -17,6 +17,8 @@ namespace Jeomseon.LocalizationExtensions.Editor
 
         public static EditorCoroutine MonitorSpecificLocaleEntry(this LocalizedString localizedString, string localeCode, System.Action<string> onChanged)
         {
+            // Editor 전용 API이므로 WaitForCompletion을 유지합니다. WebGL 미지원 제약은 Player
+            // 런타임에만 해당하며, Runtime의 동일 패턴은 GetLocalizedStringByLocaleAsync로 대체했습니다.
             if (!LocalizationSettings.InitializationOperation.IsDone)
             {
                 LocalizationSettings.InitializationOperation.WaitForCompletion();

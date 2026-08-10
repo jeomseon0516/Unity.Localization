@@ -15,8 +15,16 @@
 
 ## [Unreleased]
 
-- TODO(api): Unity Localization의 LocalizeStringEvent로 직접 대체 가능한 컴포넌트와 추가 기능이 필요한 확장 코드를 구분합니다.
-- 정적 이벤트와 전역 인스턴스의 Domain Reload 비활성화 호환성을 검토합니다.
+- **(Breaking)** 워크스페이스 전체에 소비처가 없던 `LocalizedStringOption`/`ILocalizable`을
+  제거했습니다. `LocalizeStringEvent`로 완전히 대체되는 미사용 wrapper였습니다.
+- **(Breaking)** `LocalizationExtensions.GetLocalizedStringByLocale(string)`을 제거하고
+  `GetLocalizedStringByLocaleAsync(string)`(`Awaitable<string>`)로 교체했습니다. 기존 API는
+  WebGL에서 지원되지 않고 메인 스레드를 블로킹하는 `WaitForCompletion`을 사용했습니다.
+- **(Breaking)** `LocalizationExtensions.TryGetLocalizedString(this StringTable, string)`이
+  이름과 다르게 `bool`을 반환하지 않고 존재하지 않는 entry에서 `NullReferenceException`을
+  던지던 결함을 `bool` + `out string` Try 패턴으로 수정했습니다.
+- Editor 전용 `LocalizedStringDrawer`의 정적 로케일 이벤트 구독과 Sample의 listener 수명을
+  검토했습니다. 별도 수정이 필요한 누수는 없었습니다.
 
 ## [0.1.0] - 2026-07-29
 
