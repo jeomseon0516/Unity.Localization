@@ -1,0 +1,14 @@
+{
+  "name": "Jeomseon.Unity.Localization.Samples.BasicUsage.Editor",
+  "rootNamespace": "Jeomseon.Samples.Localization.Editor",
+  "references": [
+    "Jeomseon.Unity.Localization.Samples.BasicUsage",
+    "Unity.Localization",
+    "Unity.Localization.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": false
+}

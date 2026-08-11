@@ -12,7 +12,7 @@ namespace Jeomseon.Localization.Editor
     [CustomPropertyDrawer(typeof(LocalizedStringAttribute))]
     internal sealed class LocalizedStringDrawer : PropertyDrawer
     {
-        private static readonly Dictionary<string, StringTableCollection> _tableCache = new();
+        private static readonly Dictionary<string, StringTableCollection> TableCache = new();
         private static EntryAdvancedDropdown _entryDropdown = null;
         private static List<Locale> _localesCache;
 
@@ -20,11 +20,11 @@ namespace Jeomseon.Localization.Editor
         {
             // 정적 생성자는 도메인 로드당 최초 1회만 실행되고 Domain Reload마다 정적 상태가
             // 초기화되므로, 별도 해제 없이 구독해도 중복 등록되지 않습니다.
-            LocalizationEditorSettings.EditorEvents.LocaleAdded += onLocaleChanged;
-            LocalizationEditorSettings.EditorEvents.LocaleRemoved += onLocaleChanged;
+            LocalizationEditorSettings.EditorEvents.LocaleAdded += OnLocaleChanged;
+            LocalizationEditorSettings.EditorEvents.LocaleRemoved += OnLocaleChanged;
         }
 
-        private static void onLocaleChanged(Locale locale)
+        private static void OnLocaleChanged(Locale locale)
         {
             // 로케일 캐시 무효화
             _localesCache = null;
@@ -36,7 +36,9 @@ namespace Jeomseon.Localization.Editor
 
             if (property.propertyType != SerializedPropertyType.Generic || property.type != nameof(LocalizedString))
             {
-                EditorGUI.LabelField(position, label.text, "LocalizedStringAttribute는 LocalizedString 타입에만 사용 가능합니다.");
+                EditorGUI.LabelField(position, label.text, EditorLocaleText.Tr(
+                    "LocalizedStringAttribute는 LocalizedString 타입에만 사용 가능합니다.",
+                    "LocalizedStringAttribute can only be used on a LocalizedString field."));
                 return;
             }
 
@@ -44,7 +46,7 @@ namespace Jeomseon.Localization.Editor
 
             int indent = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
-            
+
             // 현재 위치 저장
             Rect currentPosition = position;
 
@@ -62,6 +64,12 @@ namespace Jeomseon.Localization.Editor
                 SerializedProperty tableNameProp = tableReferenceProp.FindPropertyRelative("m_TableCollectionName");
                 SerializedProperty tableEntryKeyProp = tableEntryReferenceProp.FindPropertyRelative("m_Key");
 
+                // 이번 OnGUI 호출에서 실제로 참조가 바뀌었는지는 아래의 개별 수정 지점마다 플래그를
+                // 챙기는 대신, 시작 시점 스냅샷과 끝난 뒤 값을 비교해 판단합니다. Rename/Delete처럼
+                // 새로 추가되는 수정 경로가 플래그를 빠뜨려도 이 비교가 항상 놓치지 않습니다.
+                string originalTableName = tableNameProp.stringValue;
+                string originalEntryKey = tableEntryKeyProp.stringValue;
+
                 // 테이블 이름 및 엔트리 키 설정
                 string tableName = "";
 
@@ -74,13 +82,15 @@ namespace Jeomseon.Localization.Editor
                         tableName = tableNameProp.stringValue;
                         if (string.IsNullOrEmpty(tableName))
                         {
-                            tableName = tableNameProp.stringValue = property.serializedObject.targetObject.GetType().Name;
+                            tableName = property.serializedObject.targetObject.GetType().Name;
+                            tableNameProp.stringValue = tableName;
                         }
                         else
                         {
                             if (tableName != property.serializedObject.targetObject.GetType().Name)
                             {
-                                tableName = tableNameProp.stringValue = property.serializedObject.targetObject.GetType().Name;
+                                tableName = property.serializedObject.targetObject.GetType().Name;
+                                tableNameProp.stringValue = tableName;
                             }
                         }
                     }
@@ -104,13 +114,17 @@ namespace Jeomseon.Localization.Editor
                 }
 
                 // 테이블 컬렉션 가져오기
-                StringTableCollection tableCollection = getTableCollection(tableName);
+                StringTableCollection tableCollection = GetTableCollection(tableName);
                 // 엔트리 가져오기
                 SharedTableData.SharedTableEntry sharedTableEntry = null;
                 if (tableCollection)
                 {
-                    sharedTableEntry = getSharedTableEntry(tableCollection, entryKey);
-                    tableReferenceProp.FindPropertyRelative("m_TableCollectionName").stringValue = tableCollection.SharedData.TableCollectionName;
+                    sharedTableEntry = GetSharedTableEntry(tableCollection, entryKey);
+                    string collectionName = tableCollection.SharedData.TableCollectionName;
+                    if (tableNameProp.stringValue != collectionName)
+                    {
+                        tableNameProp.stringValue = collectionName;
+                    }
 
                     if (sharedTableEntry is null && !string.IsNullOrEmpty(attr.EntryKey))
                     {
@@ -120,30 +134,44 @@ namespace Jeomseon.Localization.Editor
                     }
                 }
 
-                tableEntryReferenceProp.FindPropertyRelative("m_KeyId").longValue = sharedTableEntry?.Id ?? 0;
+                SerializedProperty tableEntryIdProp = tableEntryReferenceProp.FindPropertyRelative("m_KeyId");
+                // Entry 이름을 이미 알고 있으므로 이름 참조로 저장합니다. ID 참조는 Runtime
+                // String Database가 로드되기 전에는 Key를 해석할 수 없어 Edit Mode 조회가
+                // 불필요하게 데이터베이스 초기화 상태에 종속됩니다.
+                const long EntryId = 0;
+                if (tableEntryIdProp.longValue != EntryId)
+                {
+                    tableEntryIdProp.longValue = EntryId;
+                }
 
                 if (!tableCollection)
                 {
-                    EditorGUI.HelpBox(currentPosition, $"테이블 '{tableName}'이(가) 존재하지 않습니다.", MessageType.Error);
+                    EditorGUI.HelpBox(currentPosition, EditorLocaleText.Tr(
+                        $"테이블 '{tableName}'이(가) 존재하지 않습니다.",
+                        $"Table '{tableName}' does not exist."), MessageType.Error);
                     currentPosition.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
                     // 테이블 생성 버튼 제공
                     if (!string.IsNullOrEmpty(tableName))
                     {
-                        if (GUI.Button(new(currentPosition.x, currentPosition.y, currentPosition.width, EditorGUIUtility.singleLineHeight), "테이블 생성"))
+                        if (GUI.Button(new(currentPosition.x, currentPosition.y, currentPosition.width, EditorGUIUtility.singleLineHeight), EditorLocaleText.Tr("테이블 생성", "Create Table")))
                         {
                             // 테이블 생성 로직
-                            string folderPath = EditorUtility.OpenFolderPanel("테이블을 생성할 폴더를 선택하세요.", "Assets", "") + $"/{tableName}/";
+                            string folderPath = EditorUtility.OpenFolderPanel(EditorLocaleText.Tr(
+                                "테이블을 생성할 폴더를 선택하세요.",
+                                "Select a folder to create the table in."), "Assets", "") + $"/{tableName}/";
                             if (!string.IsNullOrEmpty(folderPath))
                             {
                                 folderPath = FileUtil.GetProjectRelativePath(folderPath);
                                 if (string.IsNullOrEmpty(folderPath))
                                 {
-                                    Debug.LogError("선택한 폴더가 프로젝트 내에 없습니다.");
+                                    Debug.LogError(EditorLocaleText.Tr(
+                                        "선택한 폴더가 프로젝트 내에 없습니다.",
+                                        "The selected folder is not inside the project."));
                                 }
                                 else
                                 {
-                                    createStringTable(tableName, folderPath);
+                                    CreateStringTable(tableName, folderPath);
                                 }
                             }
                         }
@@ -152,13 +180,15 @@ namespace Jeomseon.Localization.Editor
                 }
                 else if (sharedTableEntry is null)
                 {
-                    EditorGUI.HelpBox(currentPosition, $"엔트리 '{entryKey}'이(가) 테이블 '{tableName}'에 존재하지 않습니다.", MessageType.Error);
+                    EditorGUI.HelpBox(currentPosition, EditorLocaleText.Tr(
+                        $"엔트리 '{entryKey}'이(가) 테이블 '{tableName}'에 존재하지 않습니다.",
+                        $"Entry '{entryKey}' does not exist in table '{tableName}'."), MessageType.Error);
                     currentPosition.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
                 }
                 else
                 {
                     // 로케일 목록 가져오기
-                    List<Locale> locales = getLocales();
+                    List<Locale> locales = GetLocales();
 
                     if (string.IsNullOrEmpty(attr.EntryKey))
                     {
@@ -195,7 +225,7 @@ namespace Jeomseon.Localization.Editor
                             // 엔트리 가져오기
                             // 엔트리가 없을 경우 생성
                             StringTableEntry entry = stringTable.GetEntry(sharedTableEntry.Id) ?? stringTable.AddEntry(sharedTableEntry.Id, "");
-                            
+
                             EditorGUI.LabelField(currentPosition, locale.LocaleName);
                             currentPosition.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
                             // 번역 값 표시 및 편집
@@ -206,7 +236,7 @@ namespace Jeomseon.Localization.Editor
                             currentPosition.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
                             string newValue = EditorGUI.TextArea(
-                                new(currentPosition.x, currentPosition.y, currentPosition.width, EditorGUIUtility.singleLineHeight * 4), 
+                                new(currentPosition.x, currentPosition.y, currentPosition.width, EditorGUIUtility.singleLineHeight * 4),
                                 entry.Value);
                             currentPosition.y += EditorGUIUtility.singleLineHeight * 4 + EditorGUIUtility.standardVerticalSpacing;
 
@@ -229,7 +259,9 @@ namespace Jeomseon.Localization.Editor
                         {
                             // 해당 로케일의 테이블이 없을 경우
                             currentPosition.height = EditorGUIUtility.singleLineHeight;
-                            EditorGUI.LabelField(currentPosition, locale.LocaleName, "해당 로케일의 테이블이 존재하지 않습니다.");
+                            EditorGUI.LabelField(currentPosition, locale.LocaleName, EditorLocaleText.Tr(
+                                "해당 로케일의 테이블이 존재하지 않습니다.",
+                                "No table exists for this locale."));
                         }
                     }
                 }
@@ -238,9 +270,9 @@ namespace Jeomseon.Localization.Editor
                 {
                     Rect buttonRect = new(currentPosition.x, currentPosition.y, currentPosition.width, EditorGUIUtility.singleLineHeight);
                     // 엔트리 생성 버튼 제공
-                    if (GUI.Button(buttonRect, "엔트리 선택"))
+                    if (GUI.Button(buttonRect, EditorLocaleText.Tr("엔트리 선택", "Select Entry")))
                     {
-                        _entryDropdown = new(new(), getTableCollection(tableName), tableCollection.SharedData)
+                        _entryDropdown = new(new(), GetTableCollection(tableName), tableCollection.SharedData)
                         {
                             TargetProp = tableEntryKeyProp
                         };
@@ -248,6 +280,36 @@ namespace Jeomseon.Localization.Editor
                     }
 
                     currentPosition.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+                }
+
+                // TableReference/TableEntryReference의 ReferenceType은 [SerializeField]가 아니라
+                // ISerializationCallbackReceiver.OnAfterDeserialize()에서 m_TableCollectionName/
+                // m_Key로부터 파생되는 값이라, 위에서 raw SerializedProperty만 바꿔서는 반영이
+                // 보장되지 않습니다(ReferenceType이 Empty로 남아 런타임 조회가 항상 빈 값을 반환하는
+                // 원인). tableEntryKeyProp의 현재 값(초기 선택·Rename·Delete·엔트리 선택 드롭다운
+                // 전부 이 필드로 수렴합니다)을 최종 값으로 사용해 ApplyModifiedProperties로 raw
+                // 값을 반영한 뒤 boxedValue로 실제 LocalizedString을 가져와 C# 프로퍼티 대입(암시적
+                // 변환 연산자)으로 ReferenceType까지 확실히 맞춥니다.
+                string currentEntryKey = tableEntryKeyProp.stringValue;
+                bool referenceChanged = tableNameProp.stringValue != originalTableName || currentEntryKey != originalEntryKey;
+
+                LocalizedString boxedLocalizedString = (LocalizedString)property.boxedValue;
+                bool requiresReferenceRepair = !string.IsNullOrEmpty(currentEntryKey) && boxedLocalizedString.IsEmpty;
+                if (referenceChanged || requiresReferenceRepair)
+                {
+                    boxedLocalizedString.TableReference = tableNameProp.stringValue;
+
+                    if (string.IsNullOrEmpty(currentEntryKey))
+                    {
+                        boxedLocalizedString.TableEntryReference = default(TableEntryReference);
+                    }
+                    else
+                    {
+                        boxedLocalizedString.TableEntryReference = currentEntryKey;
+                    }
+
+                    property.boxedValue = boxedLocalizedString;
+                    property.serializedObject.ApplyModifiedProperties();
                 }
             }
 
@@ -272,7 +334,7 @@ namespace Jeomseon.Localization.Editor
                 string tableName = attr.TableName ?? property.FindPropertyRelative("m_TableReference").FindPropertyRelative("m_TableCollectionName").stringValue;
                 string entryKey = attr.EntryKey ?? property.FindPropertyRelative("m_TableEntryReference").FindPropertyRelative("m_Key").stringValue;
 
-                StringTableCollection tableCollection = getTableCollection(tableName);
+                StringTableCollection tableCollection = GetTableCollection(tableName);
                 SharedTableData.SharedTableEntry sharedTableEntry = null;
 
                 if (attr.CanSelectTable)
@@ -282,7 +344,7 @@ namespace Jeomseon.Localization.Editor
 
                 if (tableCollection)
                 {
-                    sharedTableEntry = getSharedTableEntry(tableCollection, entryKey);
+                    sharedTableEntry = GetSharedTableEntry(tableCollection, entryKey);
                 }
 
                 if (!tableCollection)
@@ -302,7 +364,7 @@ namespace Jeomseon.Localization.Editor
                     if (sharedTableEntry is not null)
                     {
                         // 로케일 목록 가져오기
-                        List<Locale> locales = getLocales();
+                        List<Locale> locales = GetLocales();
                         totalHeight += locales.Sum(_ => EditorGUIUtility.singleLineHeight * 6 + EditorGUIUtility.standardVerticalSpacing * 3);
                     }
                 }
@@ -313,11 +375,11 @@ namespace Jeomseon.Localization.Editor
             return totalHeight;
         }
 
-        private static StringTableCollection getTableCollection(string tableName)
+        private static StringTableCollection GetTableCollection(string tableName)
         {
             if (string.IsNullOrEmpty(tableName)) return null;
 
-            if (_tableCache.TryGetValue(tableName, out StringTableCollection tableCollection))
+            if (TableCache.TryGetValue(tableName, out StringTableCollection tableCollection))
             {
                 return tableCollection;
             }
@@ -325,13 +387,13 @@ namespace Jeomseon.Localization.Editor
             tableCollection = LocalizationEditorSettings.GetStringTableCollection(tableName);
             if (tableCollection)
             {
-                _tableCache[tableName] = tableCollection;
+                TableCache[tableName] = tableCollection;
             }
 
             return tableCollection;
         }
 
-        private static SharedTableData.SharedTableEntry getSharedTableEntry(StringTableCollection tableCollection, string entryKey)
+        private static SharedTableData.SharedTableEntry GetSharedTableEntry(StringTableCollection tableCollection, string entryKey)
         {
             if (!tableCollection || string.IsNullOrEmpty(entryKey)) return null;
 
@@ -340,13 +402,13 @@ namespace Jeomseon.Localization.Editor
             return sharedTableData.GetEntry(entryKey);
         }
 
-        private static List<Locale> getLocales()
+        private static List<Locale> GetLocales()
         {
             _localesCache ??= new(LocalizationEditorSettings.GetLocales());
             return _localesCache;
         }
 
-        private static void createStringTable(string tableName, string folderPath)
+        private static void CreateStringTable(string tableName, string folderPath)
         {
             // EditorApplication.delayCall을 사용하여 다음 에디터 사이클로 작업을 미룸
             EditorApplication.delayCall += () =>
@@ -359,9 +421,11 @@ namespace Jeomseon.Localization.Editor
                 AssetDatabase.Refresh();
 
                 // 캐시 업데이트
-                _tableCache[tableName] = collection;
+                TableCache[tableName] = collection;
 
-                Debug.Log($"테이블 '{tableName}'이(가) '{folderPath}'에 생성되었습니다.");
+                Debug.Log(EditorLocaleText.Tr(
+                    $"테이블 '{tableName}'이(가) '{folderPath}'에 생성되었습니다.",
+                    $"Table '{tableName}' was created at '{folderPath}'."));
             };
         }
     }

@@ -110,11 +110,11 @@ namespace Jeomseon.Localization.Editor
             }
             else
             {
-                createNewEntry();
+                CreateNewEntry();
             }
         }
 
-        private void createNewEntry()
+        private void CreateNewEntry()
         {
             const string EntryKey = "NewEntryKey";
             int count = _tableData.Entries.Count(entry => entry.Key.StartsWith(EntryKey)) + 1;
@@ -137,7 +137,9 @@ namespace Jeomseon.Localization.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"엔트리 '{key}'가 테이블 '{_tableCollection.TableCollectionName}'에 생성되었습니다.");
+            Debug.Log(EditorLocaleText.Tr(
+                $"엔트리 '{key}'가 테이블 '{_tableCollection.TableCollectionName}'에 생성되었습니다.",
+                $"Entry '{key}' was created in table '{_tableCollection.TableCollectionName}'."));
             OnCreatedEntry?.Invoke(newEntry);
 
             if (TargetProp is not null)
