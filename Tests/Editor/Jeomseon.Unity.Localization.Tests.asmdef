@@ -1,0 +1,17 @@
+{
+  "name": "Jeomseon.Unity.Localization.Tests",
+  "rootNamespace": "Jeomseon.Tests.Localization",
+  "references": [
+    "Jeomseon.Unity.Localization",
+    "Unity.Addressables",
+    "Unity.Localization",
+    "Unity.ResourceManager"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
