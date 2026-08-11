@@ -51,16 +51,15 @@ namespace Jeomseon.LocalizationExtensions
 
         public static string GetEntryKeyName(this LocalizedString localizedString)
         {
-            if (!string.IsNullOrEmpty(localizedString.TableReference))
-            {
-                LocalizedDatabase<StringTable, StringTableEntry>.TableEntryResult t =
-                    LocalizationSettings.StringDatabase.GetTableEntry(
-                        localizedString.TableReference,
-                        localizedString.TableEntryReference);
-                return t.Entry?.Key ?? "";
-            }
+            if (string.IsNullOrEmpty(localizedString.TableReference)) return "";
+            
+            LocalizedDatabase<StringTable, StringTableEntry>.TableEntryResult t =
+                LocalizationSettings.StringDatabase.GetTableEntry(
+                    localizedString.TableReference,
+                    localizedString.TableEntryReference);
+            
+            return t.Entry?.Key ?? "";
 
-            return "";
         }
     }
 }
