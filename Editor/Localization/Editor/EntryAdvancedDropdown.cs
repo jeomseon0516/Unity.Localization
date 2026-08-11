@@ -116,10 +116,10 @@ namespace Jeomseon.Localization.Editor
 
         private void createNewEntry()
         {
-            const string ENTRY_KEY = "NewEntryKey";
-            int count = _tableData.Entries.Count(entry => entry.Key.StartsWith(ENTRY_KEY)) + 1;
+            const string EntryKey = "NewEntryKey";
+            int count = _tableData.Entries.Count(entry => entry.Key.StartsWith(EntryKey)) + 1;
             // 새로운 엔트리 키 입력 받기
-            string key = $"{ENTRY_KEY}_{count}";
+            string key = $"{EntryKey}_{count}";
 
             // 엔트리 추가
             SharedTableData.SharedTableEntry newEntry = _tableData.AddKey(key);
