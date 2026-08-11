@@ -8,12 +8,12 @@ using UnityEngine.Localization.Settings;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using Unity.EditorCoroutines.Editor;
 
-namespace Jeomseon.LocalizationExtensions.Editor
+namespace Jeomseon.Localization.Extensions.Editor
 {
     public static class LocalizedStringExtensionsForEditor
     {
         // Locale 캐시
-        private static readonly Dictionary<string, Locale> _localeCache = new();
+        private static readonly Dictionary<string, Locale> LocaleCache = new();
 
         public static EditorCoroutine MonitorSpecificLocaleEntry(this LocalizedString localizedString, string localeCode, System.Action<string> onChanged)
         {
@@ -25,12 +25,12 @@ namespace Jeomseon.LocalizationExtensions.Editor
             }
             
             // Locale 캐시에서 가져오기
-            if (!_localeCache.TryGetValue(localeCode, out Locale targetLocale))
+            if (!LocaleCache.TryGetValue(localeCode, out Locale targetLocale))
             {
                 targetLocale = LocalizationSettings.AvailableLocales.GetLocale(localeCode);
                 if (targetLocale != null)
                 {
-                    _localeCache.Add(localeCode, targetLocale); // Locale 캐시
+                    LocaleCache.Add(localeCode, targetLocale); // Locale 캐시
                 }
                 else
                 {
@@ -39,14 +39,14 @@ namespace Jeomseon.LocalizationExtensions.Editor
                 }
             }
             
-            return EditorCoroutineUtility.StartCoroutineOwnerless(iEMonitorEntryCoroutine(localizedString, targetLocale, onChanged));
+            return EditorCoroutineUtility.StartCoroutineOwnerless(IEMonitorEntryCoroutine(localizedString, targetLocale, onChanged));
         }
 
-        private static IEnumerator iEMonitorEntryCoroutine(LocalizedString localizedString, Locale locale, System.Action<string> onChanged)
+        private static IEnumerator IEMonitorEntryCoroutine(LocalizedString localizedString, Locale locale, System.Action<string> onChanged)
         {
             findTable:
             yield return new WaitUntil(() => localizedString.TableReference.ReferenceType != TableReference.Type.Empty);
-            AsyncOperationHandle<StringTable> tableOperation = LocalizationSettings.StringDatabase.GetTableAsync(localizedString.TableReference, locale);
+            var tableOperation = LocalizationSettings.StringDatabase.GetTableAsync(localizedString.TableReference, locale);
             yield return tableOperation;
 
             StringTable stringTable = tableOperation.Result;
@@ -56,18 +56,18 @@ namespace Jeomseon.LocalizationExtensions.Editor
                 yield break;
             }
 
-            string previousValue = getEntryValue(stringTable, localizedString.TableEntryReference.KeyId);
+            string previousValue = GetEntryValue(stringTable, localizedString.TableEntryReference);
             onChanged?.Invoke(previousValue);
             // 주기적으로 값 모니터링
-            while (Application.isPlaying == false)
+            while (!Application.isPlaying)
             {
                 if (localizedString.TableReference.ReferenceType == TableReference.Type.Empty)
                 {
                     onChanged?.Invoke(string.Empty);
                     goto findTable;
                 }
-                
-                string currentValue = getEntryValue(stringTable, localizedString.TableEntryReference.KeyId);
+
+                string currentValue = GetEntryValue(stringTable, localizedString.TableEntryReference);
                 if (currentValue != previousValue)
                 {
                     previousValue = currentValue;
@@ -78,9 +78,16 @@ namespace Jeomseon.LocalizationExtensions.Editor
             }
         }
 
-        private static string getEntryValue(StringTable table, long keyId)
+        // Drawer가 Entry를 이름 참조(TableEntryReference.Type.Name)로 저장하므로, ID 기반 조회만
+        // 하면 Inspector로 설정한 필드에서 항상 결과가 비어 있었습니다. ReferenceType에 맞춰 이름/ID
+        // 조회를 모두 지원합니다.
+        private static string GetEntryValue(StringTable table, TableEntryReference entryReference)
         {
-            return table.TryGetValue(keyId, out StringTableEntry entry) ? entry.GetLocalizedString() : string.Empty;
+            StringTableEntry entry = entryReference.ReferenceType == TableEntryReference.Type.Name
+                ? table.GetEntry(entryReference.Key)
+                : table.GetEntry(entryReference.KeyId);
+
+            return entry?.GetLocalizedString() ?? string.Empty;
         }
     }
 }

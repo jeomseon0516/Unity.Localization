@@ -3,6 +3,7 @@
   "rootNamespace": "Jeomseon.Samples.Localization",
   "references": [
     "Jeomseon.Unity.Localization",
-    "Unity.Localization"
+    "Unity.Localization",
+    "Unity.ResourceManager"
   ]
 }
