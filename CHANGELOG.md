@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-08-11
+
+- `README.md` 설치 안내의 Git URL 태그를 `v0.2.1`에서 `v0.3.0`으로 갱신했습니다(누락됐던 부분).
+- `0.3.0`의 Breaking 변경 3건(`LocalizedStringOption`/`ILocalizable` 제거,
+  `GetLocalizedStringByLocale` → `GetLocalizedStringByLocaleAsync`,
+  `TryGetLocalizedString` Try 패턴 전환)에 대한 마이그레이션 가이드를
+  `Documentation~/Migration-0.2.3-to-0.3.0.md`로 추가했습니다.
+
 ## [0.2.2] - 2026-07-29
 
 - Runtime·Editor·Samples 어셈블리의 `rootNamespace`와 소스 파일 위치를 namespace에 맞게 정리했습니다.
