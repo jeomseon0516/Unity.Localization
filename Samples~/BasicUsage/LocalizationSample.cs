@@ -1,21 +1,22 @@
 using Jeomseon.LocalizationExtensions;
 using UnityEngine;
 using UnityEngine.Localization;
+using UnityEngine.Serialization;
 
 namespace Jeomseon.Samples.Localization
 {
     public sealed class LocalizationSample : MonoBehaviour
     {
-        [SerializeField] private LocalizedString _message;
+        [SerializeField, FormerlySerializedAs("_message")] private LocalizedString message;
 
         private void OnEnable()
         {
-            _message.StringChanged += OnStringChanged;
+            message.StringChanged += OnStringChanged;
         }
 
         private void OnDisable()
         {
-            _message.StringChanged -= OnStringChanged;
+            message.StringChanged -= OnStringChanged;
         }
 
         private static void OnStringChanged(string value)
@@ -26,7 +27,7 @@ namespace Jeomseon.Samples.Localization
         [ContextMenu("Entry Key 확인")]
         private void PrintEntryKeyName()
         {
-            Debug.Log($"Entry Key: {_message.GetEntryKeyName()}");
+            Debug.Log($"Entry Key: {message.GetEntryKeyName()}");
         }
     }
 }

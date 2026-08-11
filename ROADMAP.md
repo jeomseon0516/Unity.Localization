@@ -21,8 +21,3 @@
    - `TryGetLocalizedString(this StringTable, string)`이 이름과 달리 `bool`을 반환하지 않고
      존재하지 않는 entry에서 `NullReferenceException`을 던지던 결함을 `bool` + `out string`
      Try 패턴으로 수정했습니다. 무관한 디버그 `Comment` 로그 부수효과도 제거했습니다.
-5. **P3-01 — Addressables 연동**
-   - 원격/대용량 String Table Locale의 로드·해제를 `Jeomseon.Unity.Addressables`의 lease
-     수명 모델로 위임할 필요가 있는지 검토합니다. 단방향 의존은 허용되므로(`ADR-0006`)
-     실제 필요가 확인되면 별도 어댑터 없이 직접 참조합니다. 구체적인 소비 요구가 아직 없어
-     설계는 보류합니다.
