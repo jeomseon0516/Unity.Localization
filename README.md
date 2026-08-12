@@ -7,7 +7,7 @@ Unity Localization을 위한 런타임 확장, `LocalizedStringAttribute` 및 �
 OpenUPM 등록 전에는 Package Manager의 **Add package from git URL**에서 다음 주소를 사용합니다.
 
 ```text
-https://github.com/jeomseon0516/Unity.Localization.git#v0.3.0
+https://github.com/jeomseon0516/Unity.Localization.git#v0.4.0
 ```
 
 ## 리팩토링 방침
