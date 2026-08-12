@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-11
+
 - **(중요)** `LocalizationSampleTableSetup.EnsureLocalizationSettings`가
   `LocalizationEditorSettings.ActiveLocalizationSettings is not null`(참조 비교)로 기존 Settings
   존재 여부를 판단해, 참조된 자산이 삭제된 "fake-null"(Unity가 파괴된 오브젝트를 진짜 `null`이
