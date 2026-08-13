@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Jeomseon.Localization.Editor
+namespace Jeomseon.Unity.Localization.Editor
 {
     internal enum EditorLocaleOverride
     {
