@@ -8,7 +8,7 @@ using UnityEngine.Localization.Settings;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using Unity.EditorCoroutines.Editor;
 
-namespace Jeomseon.Localization.Extensions.Editor
+namespace Jeomseon.Unity.Localization.Editor.Extensions
 {
     public static class LocalizedStringExtensionsForEditor
     {

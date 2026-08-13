@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Jeomseon.Localization.Extensions;
+using Jeomseon.Unity.Localization.Extensions;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -10,7 +10,7 @@ using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 using UnityEngine.Localization.Tables;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using LocalizationExtensionMethods = Jeomseon.Localization.Extensions.LocalizationExtensions;
+using LocalizationExtensionMethods = Jeomseon.Unity.Localization.Extensions.LocalizationExtensions;
 
 namespace Jeomseon.Tests.Localization
 {

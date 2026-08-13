@@ -1,6 +1,11 @@
 # 변경 기록
 
-## [Unreleased]
+## [0.5.0] - 2026-08-13
+
+- **(Breaking)** Runtime/Editor 네임스페이스를 패키지 및 경로 규칙에 맞춰
+  `Jeomseon.Unity.Localization[.Extensions]`와
+  `Jeomseon.Unity.Localization.Editor[.Extensions]`로 변경하고 중복된 `Localization/Editor`
+  폴더 계층을 평탄화했습니다. 이전 네임스페이스 호환 별칭은 제공하지 않습니다.
 
 ## [0.4.0] - 2026-08-11
 

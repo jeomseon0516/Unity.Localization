@@ -1,7 +1,7 @@
 #if UNITY_EDITOR
 using UnityEditor;
 
-namespace Jeomseon.Localization.Editor
+namespace Jeomseon.Unity.Localization.Editor
 {
     internal static class EditorLocaleSettingsProvider
     {
