@@ -1,6 +1,6 @@
 {
   "name": "Jeomseon.Unity.Localization.Editor",
-  "rootNamespace": "Jeomseon.Unity.Localization",
+  "rootNamespace": "Jeomseon.Unity.Localization.Editor",
   "references": [
     "Jeomseon.Unity.Localization",
     "Jeomseon.Unity.Core",
