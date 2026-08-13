@@ -1,5 +1,5 @@
-using Jeomseon.Localization;
-using Jeomseon.Localization.Extensions;
+using Jeomseon.Unity.Localization;
+using Jeomseon.Unity.Localization.Extensions;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;

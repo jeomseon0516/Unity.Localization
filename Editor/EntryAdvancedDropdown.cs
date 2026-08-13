@@ -11,7 +11,7 @@ using UnityEngine.Localization.Tables;
 using Jeomseon.Collections;
 using Object = UnityEngine.Object;
 
-namespace Jeomseon.Localization.Editor
+namespace Jeomseon.Unity.Localization.Editor
 {
     internal sealed class EntryAdvancedDropdown : AdvancedDropdown
     {

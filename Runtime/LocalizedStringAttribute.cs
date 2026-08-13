@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Localization;
 
-namespace Jeomseon.Localization
+namespace Jeomseon.Unity.Localization
 {
     [AttributeUsage(AttributeTargets.Field), Conditional("UNITY_EDITOR")]
     public sealed class LocalizedStringAttribute : PropertyAttribute

@@ -7,7 +7,7 @@ using UnityEngine.Localization;
 using UnityEngine.Localization.Tables;
 using UnityEditor.Localization;
 
-namespace Jeomseon.Localization.Editor
+namespace Jeomseon.Unity.Localization.Editor
 {
     [CustomPropertyDrawer(typeof(LocalizedStringAttribute))]
     internal sealed class LocalizedStringDrawer : PropertyDrawer
