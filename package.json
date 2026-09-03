@@ -1,6 +1,6 @@
 {
   "name": "com.jeomseon.unity.localization",
-  "version": "0.5.0",
+  "version": ".0.5.1.",
   "displayName": "Jeomseon Unity Localization",
   "description": "Extensions, attributes, and editor tooling for Unity Localization.",
   "unity": "6000.6",
