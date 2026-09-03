@@ -2,12 +2,33 @@
 
 Unity Localization을 위한 런타임 확장, `LocalizedStringAttribute` 및 전용 PropertyDrawer를 제공합니다.
 
-## 설치
+## OpenUPM으로 설치
 
-OpenUPM 등록 전에는 Package Manager의 **Add package from git URL**에서 다음 주소를 사용합니다.
+프로젝트의 `Packages/manifest.json`에 OpenUPM scoped registry를 한 번 등록합니다.
+
+```json
+{
+  "scopedRegistries": [
+    {
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.jeomseon"
+      ]
+    }
+  ],
+  "dependencies": {
+    "com.jeomseon.unity.localization": "0.5.2"
+  }
+}
+```
+
+## Git URL로 설치
+
+Unity Package Manager의 `Install package from git URL`에 다음 주소를 사용합니다.
 
 ```text
-https://github.com/jeomseon0516/Unity.Localization.git#v0.4.0
+https://github.com/jeomseon0516/Unity.Localization.git#v0.5.2
 ```
 
 ## 리팩토링 방침
