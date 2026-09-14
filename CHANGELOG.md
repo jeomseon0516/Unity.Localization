@@ -53,7 +53,7 @@
   조회 메서드 중 어디가 왜 실패하는지 재현 없이 바로 확인할 수 있습니다. `TryGetLocalizedString`
   확인 메서드의 실패 로그도 항상 "Entry 미지정"으로 단정하던 것을 `IsEmpty`/`HasSettings`/기타로
   원인을 구분해 출력하도록 고쳤습니다.
-- Claude 세션에서 Codex 세션 산출물을 재검토해 발견한 결함을 수정했습니다.
+- 추가 검토에서 발견한 결함을 수정했습니다.
   - `LocalizedStringExtensionsForEditor.MonitorSpecificLocaleEntry`(공개 API)가 항상 빈 값을
     보고하던 결함을 수정했습니다. Drawer가 Entry를 이름 참조로 저장하도록 바뀌면서
     `TableEntryReference.KeyId`가 항상 `0`이 되는데, 이 메서드는 여전히 `KeyId`로만 조회해
@@ -75,14 +75,14 @@
   - `Runtime/LocalizationExtensions/`, `Editor/LocalizationExtensions/Editor/` 폴더를 각각
     `Runtime/Localization/Extensions/`, `Editor/Localization/Extensions/Editor/`로 옮겨
     namespace 변경(`Jeomseon.Localization.Extensions[.Editor]`) 이후에도 남아 있던 폴더 경로·
-    namespace 불일치를 정리했습니다(AGENTS.md 코드 구조 규칙).
+    namespace 불일치를 정리했습니다.
   - `LocalizedStringDrawer`·`EntryAdvancedDropdown`·`LocalizedStringExtensionsForEditor`의
     `private`/`private static` 메서드(`onLocaleChanged`, `getTableCollection`,
     `getSharedTableEntry`, `getLocales`, `createStringTable`, `createNewEntry`,
     `iEMonitorEntryCoroutine`)를 워크스페이스 명명 규칙(메서드 PascalCase)에 맞춰 정리했습니다.
     `LocalizedStringDrawer`의 로컬 `const long entryId`도 `EntryId`로 정리했습니다.
-  - AGENTS.md 명명 규칙에 "`static readonly` 필드는 접근 제한자와 무관하게 PascalCase" 규칙을
-    추가하고, `LocalizedStringDrawer._tableCache`를 `TableCache`로 정리했습니다
+  - `static readonly` 필드를 접근 제한자와 무관하게 PascalCase로 통일하고,
+    `LocalizedStringDrawer._tableCache`를 `TableCache`로 정리했습니다
     (`LocalizedStringExtensionsForEditor.LocaleCache`, `LocalizationSampleTableSetup.SampleLanguages`는
     이미 이 규칙을 따르고 있었습니다).
 - **(Breaking)** 확장 메서드 namespace를 `Jeomseon.LocalizationExtensions`에서 패키지의 기본
@@ -172,7 +172,7 @@
   검토했습니다. 별도 수정이 필요한 누수는 없었습니다.
 - `Basic Usage` Sample에 `LocalizationSample` 컴포넌트가 이미 부착된 `LocalizationSample.unity`
   Scene을 추가했습니다. 기존에는 Scene 자산 없이 README로 GameObject 생성·컴포넌트 부착을
-  안내만 하고 있어 `AGENTS.md`의 샘플 정책(Scene 자산 필수)을 충족하지 못했습니다.
+  안내만 하고 있어 바로 실행할 수 없었습니다.
 - 워크스페이스 명명 규칙에 맞춰 `LocalizationSample`의 `[SerializeField] private` 필드를
   `_camelCase`에서 `camelCase`로 정리하고(`[FormerlySerializedAs]`로 기존 이름 보존),
   `EntryAdvancedDropdown`의 `SCREAMING_SNAKE_CASE` 로컬 상수를 `PascalCase`로 정리했습니다.
