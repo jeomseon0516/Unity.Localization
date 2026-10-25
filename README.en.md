@@ -4,6 +4,10 @@
 
 Preserves Unity LocalizedString and String Tables while adding locale lookup helpers and dedicated Inspector editing. It does not replace the localization data service.
 
+![Reference editing and localized lookup](Documentation~/Images/usage-flow.svg)
+
+Data and references remain Unity Localization objects. Verify Inspector assignment and locale-specific lookup independently.
+
 ## Quick start
 
 Configure Unity Locales/Tables/Entries, assign the attributed LocalizedString, then call TryGetLocalizedString or GetLocalizedStringByLocaleAsync. Import Jeomseon.Unity.Localization.Extensions.
@@ -108,6 +112,13 @@ successful lookup, empty references, missing Locales, Entry keys, and diagnostic
   main thread.
 - `TryGetLocalizedString(this StringTable, string entryName, out string)` returns `false` and an
   empty string when the entry does not exist, instead of throwing.
+
+## Verify the behavior
+
+1. Import Basic Usage and run `Jeomseon/Tool/Localization/Setup Basic Usage Sample`.
+2. In the LocalizationSample Scene, select the LocalizationSample/Greeting Entry in the message field.
+3. In Play Mode, invoke the TryGetLocalizedString and English async lookup context menus. Check that the prepared Table values are printed.
+4. Verify that references survive saving and reopening the Scene. Distinguish Edit Mode locale preload state from Play Mode lookup results.
 
 ## Samples
 

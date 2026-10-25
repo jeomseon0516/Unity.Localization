@@ -4,6 +4,10 @@
 
 Unity Localization의 LocalizedString과 String Table을 유지하면서 언어별 조회와 전용 Inspector 편집을 보완합니다. 번역 데이터 서비스 자체를 대체하지 않습니다.
 
+![Reference editing and localized lookup](Documentation~/Images/usage-flow.svg)
+
+데이터와 참조는 Unity Localization을 사용합니다. Inspector의 연결과 언어별 조회 확장을 독립적으로 확인합니다.
+
 ## 빠르게 시작하기
 
 Unity Localization의 Locale·Table·Entry 구성 → LocalizedStringAttribute 필드 연결 → TryGetLocalizedString 또는 GetLocalizedStringByLocaleAsync 호출. namespace는 Jeomseon.Unity.Localization.Extensions입니다.
@@ -119,6 +123,13 @@ namespace는 `Jeomseon.Unity.Localization`과 `.Extensions`/`.Editor`입니다.
   Localization 초기화가 끝나지 않았다면 메인 스레드를 블로킹하지 않고 비동기로 대기합니다.
 - `TryGetLocalizedString(this StringTable, string entryName, out string)`은 entry가 없으면
   예외 대신 `false`와 빈 문자열을 반환합니다.
+
+## 동작 확인
+
+1. Basic Usage를 Import하고 `Jeomseon/Tool/Localization/Setup Basic Usage Sample`을 실행합니다.
+2. LocalizationSample Scene의 message 필드에서 LocalizationSample/Greeting Entry를 선택합니다.
+3. Play에서 TryGetLocalizedString과 영어 비동기 조회 Context Menu를 실행해 준비된 Table 값이 출력되는지 확인합니다.
+4. Scene 저장·재오픈 후 참조가 유지되는지 확인합니다. Edit Mode의 Locale preload 상태를 Play Mode 조회 결과와 혼동하지 않습니다.
 
 ## 샘플 실행
 
