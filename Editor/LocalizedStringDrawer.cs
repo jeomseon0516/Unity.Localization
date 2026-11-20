@@ -16,6 +16,7 @@ namespace Jeomseon.Unity.Localization.Editor
     internal sealed class LocalizedStringDrawer : PropertyDrawer
     {
         private static readonly Dictionary<string, StringTableCollection> TableCache = new();
+        private static readonly Color OptionBackgroundColor = ColorUtility.TryParseHtmlString("#413a4f", out Color optionColor) ? optionColor : Color.black;
         private static EntryAdvancedDropdown _entryDropdown = null;
         private static List<Locale> _localesCache;
 
@@ -213,8 +214,6 @@ namespace Jeomseon.Unity.Localization.Editor
                     content.Add(CreateEntryKeyRow(property, tableNameProp, tableEntryKeyProp, tableCollection.SharedData, sharedTableEntry, rebuild));
                 }
 
-                Color optionBackgroundColor = ColorUtility.TryParseHtmlString("#413a4f", out Color color) ? color : Color.black;
-
                 foreach (Locale locale in locales)
                 {
                     StringTable stringTable = tableCollection.GetTable(locale.Identifier) as StringTable;
@@ -229,7 +228,7 @@ namespace Jeomseon.Unity.Localization.Editor
                         {
                             style =
                             {
-                                backgroundColor = optionBackgroundColor
+                                backgroundColor = OptionBackgroundColor
                             }
                         };
 
