@@ -8,6 +8,7 @@ using UnityEditor.Localization;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.Localization.Tables;
+using UnityEngine.UIElements;
 using Jeomseon.Collections;
 using Object = UnityEngine.Object;
 
@@ -19,7 +20,6 @@ namespace Jeomseon.Unity.Localization.Editor
         {
             private readonly SharedTableData.SharedTableEntry _targetEntry;
             private readonly SharedTableData _tableData;
-            private readonly GUIStyle _labelStyle;
             private string _entryName;
 
             public override Vector2 GetWindowSize()
@@ -27,18 +27,36 @@ namespace Jeomseon.Unity.Localization.Editor
                 return new(300f, 200f);
             }
 
-            public override void OnGUI(Rect rect)
+            public override VisualElement CreateGUI()
             {
-                EditorGUI.LabelField(new(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight), "Rename", _labelStyle);
-                rect.y += EditorGUIUtility.singleLineHeight;
-                _entryName = EditorGUI.TextField(new(rect.x, rect.y, rect.y, EditorGUIUtility.singleLineHeight), _entryName);
-                rect.y += EditorGUIUtility.singleLineHeight;
+                var root = new VisualElement();
 
-                if (GUI.Button(new(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight), "Modify"))
+                root.Add(new Label("Rename")
+                {
+                    style =
+                    {
+                        unityFontStyleAndWeight = FontStyle.Bold,
+                        unityTextAlign = TextAnchor.MiddleCenter
+                    }
+                });
+
+                var entryNameField = new TextField
+                {
+                    value = _entryName
+                };
+                entryNameField.RegisterValueChangedCallback(evt => _entryName = evt.newValue);
+                root.Add(entryNameField);
+
+                root.Add(new Button(() =>
                 {
                     _tableData.RenameKey(_targetEntry.Id, _entryName);
                     editorWindow.Close();
-                }
+                })
+                {
+                    text = "Modify"
+                });
+
+                return root;
             }
 
             public EntryRenamePopupWindow(SharedTableData tableData, SharedTableData.SharedTableEntry targetEntry)
@@ -46,11 +64,6 @@ namespace Jeomseon.Unity.Localization.Editor
                 _targetEntry = targetEntry;
                 _tableData = tableData;
                 _entryName = _targetEntry.Key;
-
-                _labelStyle = new(EditorStyles.boldLabel)
-                {
-                    alignment = TextAnchor.MiddleCenter
-                };
             }
         }
 

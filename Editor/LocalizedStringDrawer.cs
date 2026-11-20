@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,6 +7,8 @@ using UnityEditor;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Tables;
 using UnityEditor.Localization;
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
 
 namespace Jeomseon.Unity.Localization.Editor
 {
@@ -28,6 +31,388 @@ namespace Jeomseon.Unity.Localization.Editor
         {
             // 로케일 캐시 무효화
             _localesCache = null;
+        }
+
+        public override VisualElement CreatePropertyGUI(SerializedProperty property)
+        {
+            LocalizedStringAttribute attr = (LocalizedStringAttribute)attribute;
+            string labelText = preferredLabel ?? property.displayName;
+
+            if (property.propertyType != SerializedPropertyType.Generic || property.type != nameof(LocalizedString))
+            {
+                return CreateLabelRow(labelText, EditorLocaleText.Tr(
+                    "LocalizedStringAttribute는 LocalizedString 타입에만 사용 가능합니다.",
+                    "LocalizedStringAttribute can only be used on a LocalizedString field."));
+            }
+
+            var root = new VisualElement();
+            var foldout = new Foldout
+            {
+                text = labelText,
+                value = property.isExpanded
+            };
+            // IMGUI판은 indentLevel을 0으로 두고 내용을 레이블과 같은 x에 그리므로, 내용은 Foldout 자식이 아닌 형제로 둡니다.
+            var content = new VisualElement();
+            root.Add(foldout);
+            root.Add(content);
+
+            foldout.RegisterValueChangedCallback(evt =>
+            {
+                if (evt.target != foldout)
+                {
+                    return;
+                }
+
+                property.isExpanded = evt.newValue;
+                Rebuild();
+            });
+
+            // Undo·외부 변경·엔트리 선택 등 참조 문자열이 바뀌면 IMGUI판의 매 프레임 재계산에 대응해 내용을 다시 구성합니다.
+            SerializedProperty tableNamePropForTracking = property.FindPropertyRelative("m_TableReference").FindPropertyRelative("m_TableCollectionName");
+            SerializedProperty tableEntryKeyPropForTracking = property.FindPropertyRelative("m_TableEntryReference").FindPropertyRelative("m_Key");
+            root.TrackPropertyValue(tableNamePropForTracking, _ => Rebuild());
+            root.TrackPropertyValue(tableEntryKeyPropForTracking, _ => Rebuild());
+
+            Action<Locale> onLocaleChanged = _ => Rebuild();
+            root.RegisterCallback<AttachToPanelEvent>(_ =>
+            {
+                LocalizationEditorSettings.EditorEvents.LocaleAdded += onLocaleChanged;
+                LocalizationEditorSettings.EditorEvents.LocaleRemoved += onLocaleChanged;
+            });
+            root.RegisterCallback<DetachFromPanelEvent>(_ =>
+            {
+                LocalizationEditorSettings.EditorEvents.LocaleAdded -= onLocaleChanged;
+                LocalizationEditorSettings.EditorEvents.LocaleRemoved -= onLocaleChanged;
+            });
+
+            Rebuild();
+            return root;
+
+            void Rebuild()
+            {
+                content.Clear();
+                foldout.SetValueWithoutNotify(property.isExpanded);
+
+                if (!property.isExpanded)
+                {
+                    content.style.display = DisplayStyle.None;
+                    return;
+                }
+
+                content.style.display = DisplayStyle.Flex;
+                BuildExpandedContent(content, property, attr, Rebuild);
+            }
+        }
+
+        private static void BuildExpandedContent(VisualElement content, SerializedProperty property, LocalizedStringAttribute attr, Action rebuild)
+        {
+            SerializedProperty tableReferenceProp = property.FindPropertyRelative("m_TableReference");
+            SerializedProperty tableEntryReferenceProp = property.FindPropertyRelative("m_TableEntryReference");
+            SerializedProperty tableNameProp = tableReferenceProp.FindPropertyRelative("m_TableCollectionName");
+            SerializedProperty tableEntryKeyProp = tableEntryReferenceProp.FindPropertyRelative("m_Key");
+
+            // OnGUI와 같이 구성 시작 시점 스냅샷과 끝난 뒤 값을 비교해 참조 동기화 여부를 판단합니다.
+            string originalTableName = tableNameProp.stringValue;
+            string originalEntryKey = tableEntryKeyProp.stringValue;
+
+            string tableName;
+
+            if (!attr.CanSelectTable)
+            {
+                tableName = attr.TableName;
+
+                if (string.IsNullOrEmpty(tableName))
+                {
+                    tableName = property.serializedObject.targetObject.GetType().Name;
+                    if (tableNameProp.stringValue != tableName)
+                    {
+                        tableNameProp.stringValue = tableName;
+                    }
+                }
+            }
+            else
+            {
+                tableName = tableNameProp.stringValue;
+
+                // 매 입력마다 화면을 다시 구성하면 포커스를 잃으므로 입력 확정(Enter·포커스 해제) 시 반영합니다.
+                var tableNameField = new TextField("Table Name")
+                {
+                    value = tableName,
+                    isDelayed = true
+                };
+                tableNameField.RegisterValueChangedCallback(evt =>
+                {
+                    if (evt.newValue != tableNameProp.stringValue)
+                    {
+                        ModifyReference(property, tableNameProp, tableEntryKeyProp, () => tableNameProp.stringValue = evt.newValue, rebuild);
+                    }
+                });
+                content.Add(tableNameField);
+            }
+
+            string entryKey = attr.EntryKey;
+            if (string.IsNullOrEmpty(entryKey))
+            {
+                entryKey = tableEntryKeyProp.stringValue;
+            }
+
+            StringTableCollection tableCollection = GetTableCollection(tableName);
+            SharedTableData.SharedTableEntry sharedTableEntry = null;
+            if (tableCollection)
+            {
+                sharedTableEntry = GetSharedTableEntry(tableCollection, entryKey);
+                string collectionName = tableCollection.SharedData.TableCollectionName;
+                if (tableNameProp.stringValue != collectionName)
+                {
+                    tableNameProp.stringValue = collectionName;
+                }
+
+                if (sharedTableEntry is null && !string.IsNullOrEmpty(attr.EntryKey))
+                {
+                    sharedTableEntry = tableCollection.SharedData.AddKey(entryKey);
+                    EditorUtility.SetDirty(tableCollection);
+                    EditorUtility.SetDirty(tableCollection.SharedData);
+                }
+            }
+
+            SerializedProperty tableEntryIdProp = tableEntryReferenceProp.FindPropertyRelative("m_KeyId");
+            // OnGUI와 같은 이유로 이름 참조로 저장합니다.
+            const long EntryId = 0;
+            if (tableEntryIdProp.longValue != EntryId)
+            {
+                tableEntryIdProp.longValue = EntryId;
+            }
+
+            if (!tableCollection)
+            {
+                content.Add(new HelpBox(EditorLocaleText.Tr(
+                    $"테이블 '{tableName}'이(가) 존재하지 않습니다.",
+                    $"Table '{tableName}' does not exist."), HelpBoxMessageType.Error));
+
+                if (!string.IsNullOrEmpty(tableName))
+                {
+                    string targetTableName = tableName;
+                    content.Add(new Button(() => PromptCreateStringTable(targetTableName, rebuild))
+                    {
+                        text = EditorLocaleText.Tr("테이블 생성", "Create Table")
+                    });
+                }
+            }
+            else if (sharedTableEntry is null)
+            {
+                content.Add(new HelpBox(EditorLocaleText.Tr(
+                    $"엔트리 '{entryKey}'이(가) 테이블 '{tableName}'에 존재하지 않습니다.",
+                    $"Entry '{entryKey}' does not exist in table '{tableName}'."), HelpBoxMessageType.Error));
+            }
+            else
+            {
+                List<Locale> locales = GetLocales();
+
+                if (string.IsNullOrEmpty(attr.EntryKey))
+                {
+                    content.Add(CreateEntryKeyRow(property, tableNameProp, tableEntryKeyProp, tableCollection.SharedData, sharedTableEntry, rebuild));
+                }
+
+                Color optionBackgroundColor = ColorUtility.TryParseHtmlString("#413a4f", out Color color) ? color : Color.black;
+
+                foreach (Locale locale in locales)
+                {
+                    StringTable stringTable = tableCollection.GetTable(locale.Identifier) as StringTable;
+
+                    if (stringTable)
+                    {
+                        StringTableEntry entry = stringTable.GetEntry(sharedTableEntry.Id) ?? stringTable.AddEntry(sharedTableEntry.Id, "");
+
+                        content.Add(new Label(locale.LocaleName));
+
+                        var optionBox = new VisualElement
+                        {
+                            style =
+                            {
+                                backgroundColor = optionBackgroundColor
+                            }
+                        };
+
+                        var isSmartToggle = new Toggle("Is Smart")
+                        {
+                            value = entry.IsSmart
+                        };
+                        isSmartToggle.RegisterValueChangedCallback(evt =>
+                        {
+                            if (evt.newValue != entry.IsSmart)
+                            {
+                                entry.IsSmart = evt.newValue;
+                                EditorUtility.SetDirty(stringTable);
+                                EditorUtility.SetDirty(tableCollection);
+                            }
+                        });
+                        optionBox.Add(isSmartToggle);
+
+                        var valueField = new TextField
+                        {
+                            multiline = true,
+                            value = entry.Value,
+                            style =
+                            {
+                                height = EditorGUIUtility.singleLineHeight * 4,
+                                whiteSpace = WhiteSpace.Normal
+                            }
+                        };
+                        valueField.RegisterValueChangedCallback(evt =>
+                        {
+                            if (evt.newValue != entry.Value)
+                            {
+                                entry.Value = evt.newValue;
+                                EditorUtility.SetDirty(stringTable);
+                                EditorUtility.SetDirty(tableCollection);
+                            }
+                        });
+                        optionBox.Add(valueField);
+
+                        content.Add(optionBox);
+                    }
+                    else
+                    {
+                        content.Add(CreateLabelRow(locale.LocaleName, EditorLocaleText.Tr(
+                            "해당 로케일의 테이블이 존재하지 않습니다.",
+                            "No table exists for this locale.")));
+                    }
+                }
+            }
+
+            if (tableCollection && string.IsNullOrEmpty(attr.EntryKey))
+            {
+                string targetTableName = tableName;
+                Button selectEntryButton = null;
+                selectEntryButton = new Button(() =>
+                {
+                    _entryDropdown = new(new(), GetTableCollection(targetTableName), tableCollection.SharedData);
+                    // TargetProp 대신 선택 이벤트에서 스냅샷 비교 후 참조를 동기화합니다.
+                    _entryDropdown.OnEntrySelected += selectedEntry =>
+                        ModifyReference(property, tableNameProp, tableEntryKeyProp, () => tableEntryKeyProp.stringValue = selectedEntry.Key, rebuild);
+                    _entryDropdown.Show(selectEntryButton.worldBound);
+                })
+                {
+                    text = EditorLocaleText.Tr("엔트리 선택", "Select Entry")
+                };
+                content.Add(selectEntryButton);
+            }
+
+            SyncLocalizedStringReference(property, tableNameProp, tableEntryKeyProp, originalTableName, originalEntryKey);
+
+            // IMGUI는 Inspector가 OnGUI 뒤에 변경을 반영하지만 UI Toolkit 경로는 직접 반영해야 합니다(Undo 기록 포함).
+            if (property.serializedObject.hasModifiedProperties)
+            {
+                property.serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        private static VisualElement CreateEntryKeyRow(
+            SerializedProperty property,
+            SerializedProperty tableNameProp,
+            SerializedProperty tableEntryKeyProp,
+            SharedTableData tableData,
+            SharedTableData.SharedTableEntry sharedTableEntry,
+            Action rebuild)
+        {
+            var row = new VisualElement
+            {
+                style =
+                {
+                    flexDirection = FlexDirection.Row
+                }
+            };
+
+            // 매 입력마다 키를 바꾸면 화면 재구성으로 포커스를 잃으므로 입력 확정 시 반영합니다.
+            var keyField = new TextField("Entry Key")
+            {
+                value = sharedTableEntry.Key,
+                isDelayed = true,
+                style =
+                {
+                    flexGrow = 1,
+                    flexBasis = 0,
+                    marginRight = EditorGUIUtility.standardVerticalSpacing
+                }
+            };
+            keyField.RegisterValueChangedCallback(evt =>
+            {
+                string key = evt.newValue;
+                if (key != sharedTableEntry.Key && !string.IsNullOrEmpty(key) && !tableData.Entries.Any(entry => entry != sharedTableEntry && entry.Key == key))
+                {
+                    ModifyReference(property, tableNameProp, tableEntryKeyProp, () =>
+                    {
+                        tableData.RenameKey(sharedTableEntry.Key, key);
+                        tableEntryKeyProp.stringValue = key;
+                        EditorUtility.SetDirty(tableData);
+                    }, rebuild);
+                }
+                else
+                {
+                    keyField.SetValueWithoutNotify(sharedTableEntry.Key);
+                }
+            });
+            row.Add(keyField);
+
+            row.Add(new Button(() =>
+            {
+                ModifyReference(property, tableNameProp, tableEntryKeyProp, () =>
+                {
+                    tableData.RemoveKey(sharedTableEntry.Key);
+                    tableEntryKeyProp.stringValue = "";
+                    EditorUtility.SetDirty(tableData);
+                }, rebuild);
+            })
+            {
+                text = "Delete",
+                style =
+                {
+                    flexGrow = 1,
+                    flexBasis = 0
+                }
+            });
+
+            return row;
+        }
+
+        private static VisualElement CreateLabelRow(string label, string message)
+        {
+            // EditorGUI.LabelField(label, message)의 2열 배치를 기본 필드 USS 클래스로 맞춥니다.
+            var row = new VisualElement
+            {
+                style =
+                {
+                    flexDirection = FlexDirection.Row
+                }
+            };
+            row.AddToClassList(BaseField<string>.ussClassName);
+
+            var labelElement = new Label(label);
+            labelElement.AddToClassList(BaseField<string>.labelUssClassName);
+            row.Add(labelElement);
+            row.Add(new Label(message));
+            return row;
+        }
+
+        private static void ModifyReference(
+            SerializedProperty property,
+            SerializedProperty tableNameProp,
+            SerializedProperty tableEntryKeyProp,
+            Action modify,
+            Action rebuild)
+        {
+            string originalTableName = tableNameProp.stringValue;
+            string originalEntryKey = tableEntryKeyProp.stringValue;
+
+            modify();
+            SyncLocalizedStringReference(property, tableNameProp, tableEntryKeyProp, originalTableName, originalEntryKey);
+
+            if (property.serializedObject.hasModifiedProperties)
+            {
+                property.serializedObject.ApplyModifiedProperties();
+            }
+
+            rebuild();
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -156,24 +541,7 @@ namespace Jeomseon.Unity.Localization.Editor
                     {
                         if (GUI.Button(new(currentPosition.x, currentPosition.y, currentPosition.width, EditorGUIUtility.singleLineHeight), EditorLocaleText.Tr("테이블 생성", "Create Table")))
                         {
-                            // 테이블 생성 로직
-                            string folderPath = EditorUtility.OpenFolderPanel(EditorLocaleText.Tr(
-                                "테이블을 생성할 폴더를 선택하세요.",
-                                "Select a folder to create the table in."), "Assets", "") + $"/{tableName}/";
-                            if (!string.IsNullOrEmpty(folderPath))
-                            {
-                                folderPath = FileUtil.GetProjectRelativePath(folderPath);
-                                if (string.IsNullOrEmpty(folderPath))
-                                {
-                                    Debug.LogError(EditorLocaleText.Tr(
-                                        "선택한 폴더가 프로젝트 내에 없습니다.",
-                                        "The selected folder is not inside the project."));
-                                }
-                                else
-                                {
-                                    CreateStringTable(tableName, folderPath);
-                                }
-                            }
+                            PromptCreateStringTable(tableName);
                         }
                         currentPosition.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
                     }
@@ -282,35 +650,7 @@ namespace Jeomseon.Unity.Localization.Editor
                     currentPosition.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
                 }
 
-                // TableReference/TableEntryReference의 ReferenceType은 [SerializeField]가 아니라
-                // ISerializationCallbackReceiver.OnAfterDeserialize()에서 m_TableCollectionName/
-                // m_Key로부터 파생되는 값이라, 위에서 raw SerializedProperty만 바꿔서는 반영이
-                // 보장되지 않습니다(ReferenceType이 Empty로 남아 런타임 조회가 항상 빈 값을 반환하는
-                // 원인). tableEntryKeyProp의 현재 값(초기 선택·Rename·Delete·엔트리 선택 드롭다운
-                // 전부 이 필드로 수렴합니다)을 최종 값으로 사용해 ApplyModifiedProperties로 raw
-                // 값을 반영한 뒤 boxedValue로 실제 LocalizedString을 가져와 C# 프로퍼티 대입(암시적
-                // 변환 연산자)으로 ReferenceType까지 확실히 맞춥니다.
-                string currentEntryKey = tableEntryKeyProp.stringValue;
-                bool referenceChanged = tableNameProp.stringValue != originalTableName || currentEntryKey != originalEntryKey;
-
-                LocalizedString boxedLocalizedString = (LocalizedString)property.boxedValue;
-                bool requiresReferenceRepair = !string.IsNullOrEmpty(currentEntryKey) && boxedLocalizedString.IsEmpty;
-                if (referenceChanged || requiresReferenceRepair)
-                {
-                    boxedLocalizedString.TableReference = tableNameProp.stringValue;
-
-                    if (string.IsNullOrEmpty(currentEntryKey))
-                    {
-                        boxedLocalizedString.TableEntryReference = default(TableEntryReference);
-                    }
-                    else
-                    {
-                        boxedLocalizedString.TableEntryReference = currentEntryKey;
-                    }
-
-                    property.boxedValue = boxedLocalizedString;
-                    property.serializedObject.ApplyModifiedProperties();
-                }
+                SyncLocalizedStringReference(property, tableNameProp, tableEntryKeyProp, originalTableName, originalEntryKey);
             }
 
             // 인덴트 복원
@@ -375,6 +715,66 @@ namespace Jeomseon.Unity.Localization.Editor
             return totalHeight;
         }
 
+        private static void SyncLocalizedStringReference(
+            SerializedProperty property,
+            SerializedProperty tableNameProp,
+            SerializedProperty tableEntryKeyProp,
+            string originalTableName,
+            string originalEntryKey)
+        {
+            // TableReference/TableEntryReference의 ReferenceType은 [SerializeField]가 아니라
+            // ISerializationCallbackReceiver.OnAfterDeserialize()에서 m_TableCollectionName/
+            // m_Key로부터 파생되는 값이라, 위에서 raw SerializedProperty만 바꿔서는 반영이
+            // 보장되지 않습니다(ReferenceType이 Empty로 남아 런타임 조회가 항상 빈 값을 반환하는
+            // 원인). tableEntryKeyProp의 현재 값(초기 선택·Rename·Delete·엔트리 선택 드롭다운
+            // 전부 이 필드로 수렴합니다)을 최종 값으로 사용해 ApplyModifiedProperties로 raw
+            // 값을 반영한 뒤 boxedValue로 실제 LocalizedString을 가져와 C# 프로퍼티 대입(암시적
+            // 변환 연산자)으로 ReferenceType까지 확실히 맞춥니다.
+            string currentEntryKey = tableEntryKeyProp.stringValue;
+            bool referenceChanged = tableNameProp.stringValue != originalTableName || currentEntryKey != originalEntryKey;
+
+            LocalizedString boxedLocalizedString = (LocalizedString)property.boxedValue;
+            bool requiresReferenceRepair = !string.IsNullOrEmpty(currentEntryKey) && boxedLocalizedString.IsEmpty;
+            if (referenceChanged || requiresReferenceRepair)
+            {
+                boxedLocalizedString.TableReference = tableNameProp.stringValue;
+
+                if (string.IsNullOrEmpty(currentEntryKey))
+                {
+                    boxedLocalizedString.TableEntryReference = default(TableEntryReference);
+                }
+                else
+                {
+                    boxedLocalizedString.TableEntryReference = currentEntryKey;
+                }
+
+                property.boxedValue = boxedLocalizedString;
+                property.serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        private static void PromptCreateStringTable(string tableName, Action onCreated = null)
+        {
+            // 테이블 생성 로직
+            string folderPath = EditorUtility.OpenFolderPanel(EditorLocaleText.Tr(
+                "테이블을 생성할 폴더를 선택하세요.",
+                "Select a folder to create the table in."), "Assets", "") + $"/{tableName}/";
+            if (!string.IsNullOrEmpty(folderPath))
+            {
+                folderPath = FileUtil.GetProjectRelativePath(folderPath);
+                if (string.IsNullOrEmpty(folderPath))
+                {
+                    Debug.LogError(EditorLocaleText.Tr(
+                        "선택한 폴더가 프로젝트 내에 없습니다.",
+                        "The selected folder is not inside the project."));
+                }
+                else
+                {
+                    CreateStringTable(tableName, folderPath, onCreated);
+                }
+            }
+        }
+
         private static StringTableCollection GetTableCollection(string tableName)
         {
             if (string.IsNullOrEmpty(tableName)) return null;
@@ -408,7 +808,7 @@ namespace Jeomseon.Unity.Localization.Editor
             return _localesCache;
         }
 
-        private static void CreateStringTable(string tableName, string folderPath)
+        private static void CreateStringTable(string tableName, string folderPath, Action onCreated = null)
         {
             // EditorApplication.delayCall을 사용하여 다음 에디터 사이클로 작업을 미룸
             EditorApplication.delayCall += () =>
@@ -426,6 +826,8 @@ namespace Jeomseon.Unity.Localization.Editor
                 Debug.Log(EditorLocaleText.Tr(
                     $"테이블 '{tableName}'이(가) '{folderPath}'에 생성되었습니다.",
                     $"Table '{tableName}' was created at '{folderPath}'."));
+
+                onCreated?.Invoke();
             };
         }
     }
