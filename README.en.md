@@ -18,7 +18,7 @@ Register the OpenUPM scoped registry once in your project's `Packages/manifest.j
     }
   ],
   "dependencies": {
-    "com.jeomseon.unity.localization": "0.5.2"
+    "com.jeomseon.unity.localization": "0.5.3"
   }
 }
 ```
@@ -28,7 +28,7 @@ Register the OpenUPM scoped registry once in your project's `Packages/manifest.j
 Enter the following URL in Unity Package Manager's `Install package from git URL`.
 
 ```text
-https://github.com/jeomseon0516/Unity.Localization.git#v0.5.2
+https://github.com/jeomseon0516/Unity.Localization.git#v0.5.3
 ```
 
 ## Behavior contract

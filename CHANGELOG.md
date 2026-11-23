@@ -1,5 +1,9 @@
 # 변경 기록
 
+## [0.5.3] - 2026-11-23
+
+- 프로젝트 로케일 설정과 LocalizedString 인스펙터 및 항목 선택기를 UI Toolkit으로 전환했습니다.
+
 ## [0.5.2] - 2026-09-03
 
 - com.jeomseon 패키지 간 의존성 핀이 옛 버전을 가리켜, 최소 구성 소비 프로젝트에서 UPM minimum-version-selection이 서로 안 맞는 낡은 세트를 조립하던 버그를 고쳤습니다. sibling 의존성 핀을 현재 최신으로 갱신합니다. (com.jeomseon.unity.core 0.1.0 -> 0.3.2)

@@ -18,7 +18,7 @@ Unity Localization을 위한 런타임 확장, `LocalizedStringAttribute` 및 �
     }
   ],
   "dependencies": {
-    "com.jeomseon.unity.localization": "0.5.2"
+    "com.jeomseon.unity.localization": "0.5.3"
   }
 }
 ```
@@ -28,7 +28,7 @@ Unity Localization을 위한 런타임 확장, `LocalizedStringAttribute` 및 �
 Unity Package Manager의 `Install package from git URL`에 다음 주소를 사용합니다.
 
 ```text
-https://github.com/jeomseon0516/Unity.Localization.git#v0.5.2
+https://github.com/jeomseon0516/Unity.Localization.git#v0.5.3
 ```
 
 ## 리팩토링 방침
