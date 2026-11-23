@@ -285,11 +285,11 @@ namespace Jeomseon.Unity.Localization.Editor
                 Button selectEntryButton = null;
                 selectEntryButton = new Button(() =>
                 {
-                    _entryDropdown = new(new(), GetTableCollection(targetTableName), tableCollection.SharedData);
+                    var entryDropdown = new EntryAdvancedDropdown(new(), GetTableCollection(targetTableName), tableCollection.SharedData);
                     // TargetProp 대신 선택 이벤트에서 스냅샷 비교 후 참조를 동기화합니다.
-                    _entryDropdown.OnEntrySelected += selectedEntry =>
+                    entryDropdown.OnEntrySelected += selectedEntry =>
                         ModifyReference(property, tableNameProp, tableEntryKeyProp, () => tableEntryKeyProp.stringValue = selectedEntry.Key, rebuild);
-                    _entryDropdown.Show(selectEntryButton.worldBound);
+                    entryDropdown.Show(selectEntryButton.worldBound);
                 })
                 {
                     text = EditorLocaleText.Tr("엔트리 선택", "Select Entry")
