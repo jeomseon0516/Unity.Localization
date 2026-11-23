@@ -59,7 +59,7 @@ private async Awaitable PrintEnglishAsync()
     }
   ],
   "dependencies": {
-    "com.jeomseon.unity.localization": "0.5.2"
+    "com.jeomseon.unity.localization": "0.5.3"
   }
 }
 ```
@@ -67,7 +67,7 @@ private async Awaitable PrintEnglishAsync()
 또는 Package Manager의 **Install package from git URL**을 사용합니다:
 
 ```text
-https://github.com/jeomseon0516/Unity.Localization.git#v0.5.2
+https://github.com/jeomseon0516/Unity.Localization.git#v0.5.3
 ```
 
 ## 설계와 동작
